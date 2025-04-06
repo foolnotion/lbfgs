@@ -10,7 +10,7 @@
 
   outputs = inputs@{ self, flake-parts, nixpkgs, foolnotion }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
 
       perSystem = { pkgs, system, ... }:
         let
@@ -57,8 +57,7 @@
               gdb
               linuxPackages_latest.perf
               valgrind
-              libnano
-            ]);
+            ]) ++ (with pkgs; if pkgs.stdenv.isx86_64 then [ libnano ] else []);
 
             shellHook = ''
               alias bb="cmake --build build -j"
