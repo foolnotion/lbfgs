@@ -94,7 +94,8 @@ auto solve_libnano(auto function, auto x0) {
     return state.x();
 }
 
-auto solve_lbfgs(auto function, nano::vector_t x0) {
+namespace {
+auto solve_lbfgs(auto const& function, nano::vector_t x0) {
     lbfgs::solver<rosenbrock_function> solver(function);
 
     Eigen::Map<Eigen::Matrix<nano::scalar_t, -1, 1> const> r0(x0.data(), x0.size());
@@ -103,6 +104,7 @@ auto solve_lbfgs(auto function, nano::vector_t x0) {
     }
     return x0; // optimization failed
 }
+} // namespace
 
 auto main() -> int
 {

@@ -39,9 +39,7 @@ inline auto make_error_code(lbfgs::solver_error /*e*/) -> std::error_code;
 namespace std
 {
 template<>
-struct is_error_code_enum<lbfgs::solver_error> : true_type
-{
-};  // NOLINT
+struct is_error_code_enum<lbfgs::solver_error> : true_type{};
 }  // namespace std
 
 namespace lbfgs::detail

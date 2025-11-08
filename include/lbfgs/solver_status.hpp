@@ -6,7 +6,7 @@
 namespace lbfgs
 {
 
-enum class solver_convergence : int
+enum class solver_convergence : uint8_t
 {
     converged = 0, // convergence reached (g_epsilon)
     stopped,       // stoping criterion satisfied (past f decrease less than delta)

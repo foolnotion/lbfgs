@@ -232,10 +232,10 @@ struct solver
      *      via quasi-Newton methods. Mathematical Programming, Vol 141,
      *      No 1, pp. 135-163, 2013.
      */
-    auto line_search(scalar_t& step) const noexcept -> solver_error
+    auto line_search(scalar_t& step) const noexcept -> std::error_code
     {
         /* Check the input parameters for errors. */
-        if (!(step > scalar_t {0.0})) {
+        if (!(step > scalar_t{0.0})) {
             return solver_error::invalid_parameters;
         }
 
@@ -255,7 +255,7 @@ struct solver
         auto brackt = false;
         for (auto iter = 1;; ++iter) {
             /* Evaluate the function and gradient values. */
-            curr_.update(functor_, prev_.x + step * dir_);
+            curr_.update(functor_, prev_.x + (step * dir_));
 
             /* Test for errors. */
             if (!std::isfinite(curr_.f)) {
@@ -263,7 +263,7 @@ struct solver
             }
 
             /* Check the Armijo condition. */
-            if (curr_.f > finit + step * f_dec_coeff * dginit) {
+            if (curr_.f > finit + (step * f_dec_coeff * dginit)) {
                 nu = step;
                 brackt = true;
             } else {
@@ -301,7 +301,7 @@ struct solver
         return solver_error::success;  // success
     }
 
-    auto check_parameters() const noexcept -> solver_error
+    auto check_parameters() const noexcept -> std::error_code
     {
         /* Check the input parameters for errors. */
         if (mem_size <= 0) {
@@ -348,9 +348,10 @@ struct solver
         lmem_ = detail::lbfgs_memory<scalar_t>(n, mem_size);
     }
 
-    auto optimize(vector_cref_t x0) const noexcept -> tl::expected<vector_t, solver_error>
+    auto optimize(vector_cref_t x0) const noexcept -> tl::expected<vector_t, std::error_code>
     {
-        if (status.error = check_parameters(); status.error != solver_error::success) {
+        if (auto ec = check_parameters(); ec != solver_error::success) {
+            status.error = static_cast<solver_error>(ec.value());
             return tl::make_unexpected(status.error);
         }
 
@@ -527,7 +528,7 @@ struct solver
         return curr_.x;
     }
 
-    mutable solver_status status {};
+    mutable solver_status status{};
 
     auto current_step_state() const { return curr_; }
     auto previous_step_state() const { return prev_; }
