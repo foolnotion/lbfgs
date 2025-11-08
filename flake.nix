@@ -18,11 +18,9 @@
             inherit system;
             overlays = [ foolnotion.overlay ];
           };
-          stdenv = pkgs.llvmPackages_18.stdenv;
+          stdenv = pkgs.llvmPackages_20.stdenv;
         in
         rec {
-          #_module.args.pkgs = pkgs;
-
           packages.default = stdenv.mkDerivation {
             name = "lbfgs";
             src = self;
@@ -37,9 +35,7 @@
 
             buildInputs = with pkgs; [
               eigen
-              ned14-outcome
-              ned14-quickcpplib
-              ned14-status-code
+              tl-expected
             ];
           };
 
@@ -47,17 +43,13 @@
             name = "lbfgs dev";
 
             nativeBuildInputs = packages.default.nativeBuildInputs ++ (with pkgs; [
-              clang-tools_18
+              clang-tools
               cppcheck
               include-what-you-use
               cmake-language-server
             ]);
 
-            buildInputs = packages.default.buildInputs ++ (with pkgs; [
-              gdb
-              linuxPackages_latest.perf
-              valgrind
-            ]) ++ (with pkgs; if pkgs.stdenv.isx86_64 then [ libnano ] else []);
+            buildInputs = packages.default.buildInputs ++ [ pkgs.libnano ]; 
 
             shellHook = ''
               alias bb="cmake --build build -j"

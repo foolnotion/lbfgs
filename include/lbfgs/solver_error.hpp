@@ -4,15 +4,9 @@
 #include <string>
 #include <system_error>
 
-#include <outcome.hpp>
-
-namespace outcome = outcome_v2;
-
-// auto convert(std::string const& str) noexcept -> outcome::result<int>;
-
 namespace lbfgs
 {
-enum class solver_error
+enum class solver_error : uint8_t
 {
     success,
     uncharted,                          // unexpected (unknown) error

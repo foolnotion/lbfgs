@@ -24,22 +24,17 @@ set_property(
 )
 
 find_package(Eigen3 REQUIRED NO_MODULE)
-find_package(outcome REQUIRED)
-if (outcome_FOUND)
-    get_target_property(outcome_include_dir outcome::hl INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "outcome found: ${outcome_include_dir}")
-endif()
+find_package(tl-expected REQUIRED)
 
 target_include_directories(
     lbfgs_lbfgs ${warning_guard}
     INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-    ${outcome_include_dir}
 )
 
 target_include_directories(lbfgs_lbfgs INTERFACE ${incdir})
 
-target_link_libraries(lbfgs_lbfgs INTERFACE Eigen3::Eigen outcome::hl status-code::hl quickcpplib::hl)
+target_link_libraries(lbfgs_lbfgs INTERFACE Eigen3::Eigen tl::expected)
 
 target_compile_features(lbfgs_lbfgs INTERFACE cxx_std_20)
 

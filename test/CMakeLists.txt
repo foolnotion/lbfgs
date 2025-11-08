@@ -13,11 +13,10 @@ if(PROJECT_IS_TOP_LEVEL)
 endif()
 
 # ---- Tests ----
-
-find_package(NANO REQUIRED)
+find_package(NANO REQUIRED COMPONENTS core function solver)
 
 add_executable(lbfgs_test source/lbfgs_test.cpp)
-target_link_libraries(lbfgs_test PRIVATE lbfgs::lbfgs NANO::NANO)
+target_link_libraries(lbfgs_test PRIVATE lbfgs::lbfgs NANO::core NANO::solver)
 target_compile_features(lbfgs_test PRIVATE cxx_std_20)
 
 add_test(NAME lbfgs_test COMMAND lbfgs_test)

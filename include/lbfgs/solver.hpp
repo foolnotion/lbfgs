@@ -8,18 +8,14 @@
 #include <limits>
 #include <ostream>
 
-#include <outcome.hpp>
-
 #include <Eigen/Dense>
+#include <tl/expected.hpp>
 
 #include "solver_error.hpp"
 #include "solver_status.hpp"
 
 namespace lbfgs
 {
-
-namespace outcome = outcome_v2;
-
 namespace detail
 {
 
@@ -236,7 +232,7 @@ struct solver
      *      via quasi-Newton methods. Mathematical Programming, Vol 141,
      *      No 1, pp. 135-163, 2013.
      */
-    auto line_search(scalar_t& step) const noexcept -> outcome::result<scalar_t>
+    auto line_search(scalar_t& step) const noexcept -> solver_error
     {
         /* Check the input parameters for errors. */
         if (!(step > scalar_t {0.0})) {
@@ -352,14 +348,14 @@ struct solver
         lmem_ = detail::lbfgs_memory<scalar_t>(n, mem_size);
     }
 
-    auto optimize(vector_cref_t x0) const noexcept -> outcome::result<vector_t>
+    auto optimize(vector_cref_t x0) const noexcept -> tl::expected<vector_t, solver_error>
     {
         if (status.error = check_parameters(); status.error != solver_error::success) {
-            return status.error;
+            return tl::make_unexpected(status.error);
         }
 
         if (!(x0.size() > 0)) {
-            return solver_error::invalid_n;
+            return tl::make_unexpected(solver_error::invalid_n);
         }
 
         init(x0.size());
@@ -403,7 +399,7 @@ struct solver
              * x is passed by reference and will be updated inside the function
              * */
 
-            if (auto res = line_search(step); res.error() != solver_error::success) {
+            if (auto res = line_search(step); res != solver_error::success) {
                 /* Revert to the previous point. */
                 std::swap(curr_, prev_);
                 break;

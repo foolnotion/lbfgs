@@ -1,15 +1,16 @@
 #include <iomanip>
 
 #include <nano/function/util.h>
-#include <nano/solver/lbfgs.h>
+#include <nano/logger.h>
+#include <nano/solver.h>
+#include <nano/tensor.h>
 
 #include "lbfgs/solver.hpp"
 
-struct rosenbrock_function : public nano::function_t
+struct rosenbrock_function final : public nano::function_t
 {
-    using scalar_t = double;
-    using vector_t = Eigen::Matrix<double, -1, 1>;
-    using matrix_t = Eigen::Matrix<double, -1, -1>;
+    using scalar_t = nano::scalar_t;
+    using vector_t = nano::vector_t;
 
     explicit rosenbrock_function(int dim)
         : nano::function_t("rosenbrock", dim)
@@ -18,12 +19,16 @@ struct rosenbrock_function : public nano::function_t
         smooth(nano::smoothness::no);
     }
 
-    auto clone() const -> nano::rfunction_t override { return std::make_unique<rosenbrock_function>(*this); }
+    auto clone() const -> nano::rfunction_t final { return std::make_unique<rosenbrock_function>(*this); }
 
-    auto operator()(scalar_t const* x, scalar_t* gx, int64_t size) const noexcept {
+    auto do_eval(eval_t eval) const -> nano::scalar_t final {
+        return (*this)(eval.m_x.data(), eval.m_gx.data(), eval.m_x.size());
+    }
+
+    auto operator()(nano::scalar_t const* x, nano::scalar_t* gx, int64_t size) const noexcept -> nano::scalar_t {
         auto const n = size;
 
-        scalar_t f {0.0};
+        nano::scalar_t f {0.0};
         for (auto i = 0L; i < n - 1; ++i) {
             auto const u = x[i];
             auto const v = x[i+1];
@@ -51,21 +56,22 @@ struct rosenbrock_function : public nano::function_t
         return f;
     }
 
-    auto do_vgrad(nano::vector_t const& x, nano::vector_t* gx) const noexcept -> scalar_t final
+    auto do_vgrad(nano::vector_t const& x, nano::vector_t* gx) const noexcept -> nano::scalar_t
     {
         auto* p = gx != nullptr ? gx->data() : nullptr;
-        return (*this)(x.data(), p, x.size()); 
+        return (*this)(x.data(), p, x.size());
     }
 
-    auto operator()(Eigen::Ref<vector_t const> const x) const noexcept {
+    auto operator()(nano::vector_t const& x) const noexcept -> nano::scalar_t
+    {
         return (*this)(x.data(), nullptr, x.size());
     }
 
-    auto operator()(Eigen::Ref<vector_t const> const x, Eigen::Ref<vector_t> gx) const noexcept {
+    auto operator()(Eigen::Ref<Eigen::Matrix<nano::scalar_t, -1, 1>> const x, Eigen::Ref<Eigen::Matrix<nano::scalar_t, -1, 1>> gx) const noexcept -> nano::scalar_t {
         return (*this)(x.data(), gx.data(), x.size());
     }
 
-    auto operator()(nano::vector_t const& x, nano::vector_t& gx) const noexcept -> scalar_t {
+    auto operator()(nano::vector_t const& x, nano::vector_t& gx) const noexcept -> nano::scalar_t {
         return do_vgrad(x, &gx);
     }
 };
@@ -73,27 +79,27 @@ struct rosenbrock_function : public nano::function_t
 auto solve_libnano(auto function, auto x0) {
     using nano::make_random_vector;
     using nano::scalar_t;
-    using nano::solver_lbfgs_t;
-    using nano::solver_state_t;
     using nano::vector_t;
 
-    auto solver = nano::solver_lbfgs_t {};
-    solver.parameter("solver::lbfgs::history") = 6;
-    solver.parameter("solver::epsilon") = 1e-6;
-    solver.parameter("solver::max_evals") = 100;
-    solver.parameter("solver::tolerance") = std::make_tuple(1e-4, 9e-1);
-    solver.lsearch0("constant");
-    solver.lsearchk("morethuente");
+    auto solver = nano::solver_t::all().get("lbfgs");
+    solver->parameter("solver::lbfgs::history") = 6;
+    solver->parameter("solver::epsilon") = 1e-6;
+    solver->parameter("solver::max_evals") = 100;
+    solver->parameter("solver::tolerance") = std::make_tuple(1e-4, 9e-1);
+    solver->lsearch0("constant");
+    solver->lsearchk("morethuente");
 
-    const auto state = solver.minimize(function, x0);
+
+    const auto state = solver->minimize(function, x0, nano::make_null_logger());
     return state.x();
 }
 
-auto solve_lbfgs(auto function, auto x0) {
+auto solve_lbfgs(auto function, nano::vector_t x0) {
     lbfgs::solver<rosenbrock_function> solver(function);
 
-    if (auto res = solver.optimize(x0)) {
-        return res.value();
+    Eigen::Map<Eigen::Matrix<nano::scalar_t, -1, 1> const> r0(x0.data(), x0.size());
+    if (auto res = solver.optimize(r0)) {
+        x0 = res.value();
     }
     return x0; // optimization failed
 }
