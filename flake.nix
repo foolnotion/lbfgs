@@ -33,7 +33,7 @@
             ];
             nativeBuildInputs = with pkgs; [ cmake ];
 
-            buildInputs = with pkgs; [
+            propagatedBuildInputs = with pkgs; [
               eigen
               tl-expected
             ];
@@ -49,7 +49,7 @@
               cmake-language-server
             ]);
 
-            buildInputs = packages.default.buildInputs ++ [ pkgs.libnano ]; 
+            buildInputs = packages.default.propagatedBuildInputs;
 
             shellHook = ''
               alias bb="cmake --build build -j"
